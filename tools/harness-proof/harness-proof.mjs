@@ -3,6 +3,7 @@ import path from 'node:path';
 import { parseArgs, readJson } from '../../skills/harness-creator/scripts/lib/harness-utils.mjs';
 import { findListPath, findProblems, inspect, loadList, saveList, verifyFeature } from './lib/proof.mjs';
 import { normalizeList } from './lib/schema.mjs';
+import { formatScore, scoreRepo } from './lib/score.mjs';
 
 const USAGE = `Usage: harness-proof <command> [--target DIR]
 
@@ -12,10 +13,12 @@ const USAGE = `Usage: harness-proof <command> [--target DIR]
   verify <id>                Run a feature's commands and record the proof
   migrate [--default-cmd C]  Print the list in format v1. --write replaces it
   hook                       Claude Code Stop hook (reads the event on stdin)
+  score [--min N] [--json]   Score out of 100, mostly from proofs. Exits 1 below N (default 70)
 
 States: proven, stale, failed, claimed, and the plain work statuses.`;
 
 const OUTPUT_TAIL_LINES = 20;
+const DEFAULT_MIN_SCORE = 70;
 
 function printRows(rows) {
   const width = Math.max(...rows.map(({ feature }) => feature.id.length), 2);
@@ -115,7 +118,13 @@ async function hook(root, args) {
   }
 }
 
-const COMMANDS = { status, check, verify, migrate, hook };
+async function score(root, args) {
+  const result = await scoreRepo(root);
+  console.log(args.json ? JSON.stringify(result, null, 2) : formatScore(result));
+  if (result.overall < Number(args.min ?? DEFAULT_MIN_SCORE)) process.exitCode = 1;
+}
+
+const COMMANDS = { status, check, verify, migrate, hook, score };
 
 const args = parseArgs(process.argv.slice(2));
 const command = COMMANDS[args._[0]];

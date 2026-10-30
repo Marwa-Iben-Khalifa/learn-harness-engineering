@@ -17,6 +17,19 @@ node tools/harness-proof/harness-proof.mjs <command> --target path/to/repo
 | `check --rerun` | Re-executes every passing feature first. Use this one in CI. |
 | `verify <id>` | Runs the feature's commands in order, writes `.harness/proofs/<id>.json`, and updates the status. |
 | `migrate` | Prints the list in format v1. Add `--write` to replace the file and `--default-cmd "npm test"` to give every feature a command. |
+| `score` | Prints a score out of 100. Exits 1 below `--min` (default 70). `--json` gives the full result. |
+
+## Score
+
+| Part | Points | Measures |
+|------|--------|----------|
+| Evidence | 70 | Features proven, divided by features marked passing. Zero when nothing is marked passing. |
+| Structure | 25 | The checks from `harness-creator`, adapted to the course's file names and format v1. |
+| Reproducibility | 5 | A dependency lockfile is committed. |
+
+Documentation alone tops out at 30, so a repository cannot pass without proofs. The score reads proofs on disk and does not rerun them, so use it for reporting and `check --rerun` as the gate.
+
+It takes over the scoring role of `tools/audit-harness.sh` and `validate-harness.mjs`, which stay in place. The audit's checks for individual lessons are not carried over.
 
 ## States
 

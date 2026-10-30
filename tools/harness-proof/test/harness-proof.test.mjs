@@ -70,6 +70,44 @@ describe('stop hook', () => {
   });
 });
 
+describe('score', () => {
+  const report = () => JSON.parse(cli('score', '--json').out);
+
+  it('gives an empty repository zero', () => {
+    assert.equal(report().overall, 0);
+    assert.equal(cli('score').code, 1);
+  });
+
+  it('counts only proven features as evidence', () => {
+    writeList([feature({ status: 'passing' }), feature({ id: 'f2', status: 'not_started' })]);
+    assert.equal(report().evidence.score, 0);
+    cli('verify', 'f1');
+    const { evidence } = report();
+    assert.equal(evidence.score, 70);
+    assert.deepEqual([evidence.proven, evidence.passing, evidence.total], [1, 1, 2]);
+  });
+
+  it('cannot pass on documentation alone', () => {
+    writeFileSync(path.join(root, 'package-lock.json'), '{}');
+    writeFileSync(path.join(root, 'CLAUDE.md'), '# Project\n## Definition of Done\n- verify\n');
+    writeList([feature({ status: 'passing' })]);
+    const { overall } = report();
+    assert.ok(overall > 0 && overall <= 30, String(overall));
+    assert.equal(cli('score').code, 1);
+  });
+
+  it('recognises the progress file name the course uses', () => {
+    writeFileSync(path.join(root, 'claude-progress.md'), '# Log\n## Current State\n');
+    assert.ok(!report().structure.missing.includes('Progress log exists'));
+  });
+
+  it('scores legacy lists and honours --min', () => {
+    writeFileSync(path.join(root, 'feature_list.json'), JSON.stringify({ features: [{ id: 'a', name: 'A', status: 'pass' }] }));
+    assert.deepEqual(report().unproven, [{ id: 'a', state: 'claimed' }]);
+    assert.equal(cli('score', '--min', '0').code, 0);
+  });
+});
+
 describe('migration', () => {
   it('imports every legacy shape used in the course', () => {
     const cases = [
