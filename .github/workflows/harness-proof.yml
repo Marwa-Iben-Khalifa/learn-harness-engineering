@@ -1,0 +1,57 @@
+name: Test harness-proof
+
+on:
+  push:
+    paths:
+      - tools/harness-proof/**
+      - skills/harness-creator/scripts/lib/**
+      - .github/workflows/harness-proof.yml
+  pull_request:
+    paths:
+      - tools/harness-proof/**
+      - skills/harness-creator/scripts/lib/**
+      - .github/workflows/harness-proof.yml
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Run tests
+        run: npm run proof:test
+
+      - name: Create fixtures
+        run: |
+          list='{"version":1,"features":[{"id":"f1","title":"One","status":"passing","verify":[{"label":"file","cmd":"test -f app.txt"}]}]}'
+          mkdir -p fixture-good fixture-bad
+          echo "$list" > fixture-good/feature_list.json
+          echo "$list" > fixture-bad/feature_list.json
+          touch fixture-good/app.txt
+
+      - name: Action passes when the verification passes
+        uses: ./tools/harness-proof
+        with:
+          target: fixture-good
+
+      - name: Action runs against a failing verification
+        id: bad
+        continue-on-error: true
+        uses: ./tools/harness-proof
+        with:
+          target: fixture-bad
+
+      - name: Action must have failed
+        if: steps.bad.outcome != 'failure'
+        run: |
+          echo "The action accepted a feature whose verification fails"
+          exit 1

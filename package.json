@@ -16,7 +16,9 @@
     "anchors:check": "node --import tsx scripts/validate-anchors.ts",
     "screenshots:readme": "node --import tsx scripts/capture-readme-screenshots.ts",
     "pdf:export": "node --import tsx scripts/build-course-pdfs.ts",
-    "pdf:build": "npm run docs:build && npm run pdf:export"
+    "pdf:build": "npm run docs:build && npm run pdf:export",
+    "proof": "node tools/harness-proof/harness-proof.mjs",
+    "proof:test": "node --test \"tools/harness-proof/test/*.test.mjs\""
   },
   "devDependencies": {
     "mermaid": "^11.14.0",

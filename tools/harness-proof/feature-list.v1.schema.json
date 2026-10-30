@@ -1,0 +1,49 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Feature List v1",
+  "description": "Single feature-list format for harness-proof. Only `harness-proof verify` may set status to passing.",
+  "type": "object",
+  "properties": {
+    "version": { "const": 1 },
+    "features": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$" },
+          "title": { "type": "string" },
+          "description": { "type": "string" },
+          "status": { "enum": ["not_started", "in_progress", "blocked", "passing"] },
+          "verify": {
+            "type": "array",
+            "description": "Commands run in order; a non-zero exit stops the run.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "label": { "type": "string" },
+                "cmd": { "type": "string" },
+                "repair": { "type": "string", "description": "What the agent should do when this command fails." }
+              },
+              "required": ["label", "cmd"]
+            }
+          },
+          "manual": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Human steps. They are kept for reference and never count as proof."
+          },
+          "paths": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Git pathspecs the proof depends on. Defaults to the whole target directory."
+          },
+          "dependencies": { "type": "array", "items": { "type": "string" } },
+          "notes": { "type": "string" },
+          "claimed_evidence": { "description": "Legacy evidence kept from migration. It never counts as proof." }
+        },
+        "required": ["id", "title", "status", "verify"]
+      }
+    }
+  },
+  "required": ["version", "features"]
+}

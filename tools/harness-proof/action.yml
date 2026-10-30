@@ -1,0 +1,27 @@
+name: harness-proof
+description: Fail the build unless every passing feature is proven by a fresh run of its verification commands.
+
+inputs:
+  target:
+    description: Directory containing feature_list.json, relative to the workspace.
+    default: .
+  rerun:
+    description: Re-execute every passing feature instead of trusting proofs on disk.
+    default: 'true'
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@v6
+      with:
+        node-version: 24
+
+    - name: Check feature proofs
+      shell: bash
+      env:
+        TARGET: ${{ inputs.target }}
+        RERUN: ${{ inputs.rerun }}
+      run: |
+        args=(check --target "$TARGET")
+        if [[ "$RERUN" == "true" ]]; then args+=(--rerun); fi
+        node "$GITHUB_ACTION_PATH/harness-proof.mjs" "${args[@]}"
